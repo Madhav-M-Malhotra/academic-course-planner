@@ -1,0 +1,102 @@
+//Prisma Configuration
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "mysql"
+  url = env("DATABASE_URL")
+}
+
+//Database Schema
+model Student{
+  id String @id
+  name String
+  email String @unique
+  program String
+  major String
+  minor String?
+  planned Courses_Planned[]
+}
+
+enum GER{
+  HL//Humanities and Languages
+  SS//Social Sciences
+  MPL//Mathematical and Physical Sciences
+  BLS//Biological and Life Sciences
+  PVA//Performing and Visual Arts
+}
+
+model Course{
+  code String @id
+  name String
+  credits Int
+  term String
+  description String?
+  ger GER?
+  school String
+  faculties Faculty[]
+  prereqs String?
+  antireqs String?
+  sections Section[]
+  plans Courses_Planned[]
+}
+
+model Faculty{
+  course_code String
+  name String
+  
+  @@id([course_code, name])
+  course Course @relation(fields: [course_code], references: [code])
+}
+
+enum Days{
+  Monday
+  Tuesday
+  Wednesday
+  Thursday
+  Friday
+  Saturday
+  Sunday
+}
+
+model Section{
+  course_code String
+  section_no Int
+  start_date DateTime
+  end_date DateTime
+  day Days
+  start_time DateTime
+  end_time DateTime
+
+  @@id([course_code, section_no])
+  course Course @relation(fields: [course_code], references: [code])
+}
+
+model Courses_Planned{
+  student_id String
+  course_code String
+
+  @@id([student_id, course_code])
+  student Student @relation(fields: [student_id], references: [id])
+  course Course @relation(fields: [course_code], references: [code]) 
+}
+
+enum CourseType{
+  CORE
+  ELECTIVE
+}
+enum ReqType{
+  MAJOR
+  MINOR
+}
+
+model Requirements{
+  subject String
+  course_code String
+  for ReqType
+  type CourseType
+
+  @@id([subject, course_code, for])
+}
