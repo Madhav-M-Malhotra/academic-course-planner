@@ -1,3 +1,5 @@
 **/node_modules/
 .env
 data/
+backend/src/generated/prisma
+/.vscode
