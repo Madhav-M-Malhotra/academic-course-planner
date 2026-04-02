@@ -70,7 +70,7 @@ model Section{
   start_time DateTime
   end_time DateTime
 
-  @@id([course_code, section_no])
+  @@id([course_code, section_no, day, start_time])
   course Course @relation(fields: [course_code], references: [code])
 }
 
