@@ -66,17 +66,27 @@ model Section{
   section_no Int
   start_date DateTime
   end_date DateTime
+  schedule Schedule[]
+
+  @@id([course_code, section_no])
+  course Course @relation(fields: [course_code], references: [code])
+}
+
+model Schedule{
+  course_code String
+  section_no Int
   day Days
   start_time DateTime
   end_time DateTime
 
   @@id([course_code, section_no, day, start_time])
-  course Course @relation(fields: [course_code], references: [code])
+  section Section @relation(fields: [course_code, section_no], references: [course_code, section_no])
 }
 
 model Courses_Planned{
   student_id String
   course_code String
+  section_no String
 
   @@id([student_id, course_code])
   student Student @relation(fields: [student_id], references: [id])
