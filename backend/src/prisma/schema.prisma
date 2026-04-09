@@ -1,7 +1,6 @@
 //Prisma Configuration
 generator client {
   provider = "prisma-client-js"
-  output   = "../generated/prisma"
 }
 
 datasource db {
@@ -86,7 +85,7 @@ model Schedule{
 model Courses_Planned{
   student_id String
   course_code String
-  section_no String
+  section_no Int
 
   @@id([student_id, course_code])
   student Student @relation(fields: [student_id], references: [id])
