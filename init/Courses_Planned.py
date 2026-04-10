@@ -1,7 +1,7 @@
 import mysql.connector
 import os
 from dotenv import load_dotenv
-import re
+import pandas as pd
 
 load_dotenv()
 
@@ -13,27 +13,13 @@ conn = mysql.connector.connect(
 )
 cursor = conn.cursor()
 
+# Read Excel file properly
+df = pd.read_excel(r"C:\Users\helis\Desktop\AU\SE\Courses_Planned.xlsx")
 
-with open("Courses_Planned.txt", "r", encoding="utf-8") as f:
-    lines = f.readlines()
+for _, row in df.iterrows():
 
-
-lines = lines[1:]
-
-
-for line in lines:
-    line = line.strip()
-    
-    if not line:
-        continue
-
-    parts = re.split(r"\t+|\s{2,}", line)
-
-    if len(parts) < 2:
-        continue
-
-    student_id = parts[0].strip()
-    course_code = parts[1].strip()
+    student_id = str(row["ID"]).strip()
+    course_code = str(row["Course Code"]).strip()
 
     try:
         cursor.execute("""
@@ -41,10 +27,10 @@ for line in lines:
             VALUES (%s, %s)
         """, (student_id, course_code))
     except:
-        pass 
-
+        pass
 
 conn.commit()
 cursor.close()
 conn.close()
 
+print("✅ Courses_Planned table populated!")

@@ -16,28 +16,52 @@ cursor = conn.cursor()
 
 df = pd.read_csv("Course Directory_SAS.csv")
 
-for _, row in df.iterrows():
-    
-    course_code = re.sub(r"\[.*?\]", "", str(row["Course Code"])).strip()
-    
-    faculty = row["Faculty"]
 
-    if pd.isna(faculty) or str(faculty).strip() in ["", "-", "TBA"]:
+def clean_course_code(code):
+    return re.sub(r"\[.*?\]", "", str(code)).strip()
+
+
+def extract_faculty_names(text):
+    if not text:
+        return []
+
+    text = str(text)
+
+    text = re.sub(r",|&| and |;", " ", text)
+
+
+    text = re.sub(r"\s+", " ", text).strip()
+
+
+    names = re.findall(r'[A-Z][a-z]+(?:\s+[A-Z][a-z]+)+', text)
+
+    return names
+
+
+
+for _, row in df.iterrows():
+
+    course_code = clean_course_code(row.get("Course Code", ""))
+    faculty = row.get("Faculty", "")
+
+
+    if pd.isna(faculty) or str(faculty).strip().lower() in ["", "-", "tba", "to be announced", "not added"]:
         continue
 
-    # Handle multiple faculty
-    faculty_list = str(faculty).split(",")
+    faculty_list = extract_faculty_names(faculty)
 
-    for f in faculty_list:
-        f = f.strip()
+    for name in faculty_list:
         try:
             cursor.execute("""
-                INSERT INTO Faculty (course_code, name)
+                INSERT IGNORE INTO Faculty(course_code, name)
                 VALUES (%s, %s)
-            """, (course_code, f))
+            """, (course_code, name.strip()))
         except Exception as e:
-            print("Error:", course_code, f, e)
+            print("Error:", course_code, name, e)
+
+
 
 conn.commit()
 cursor.close()
 conn.close()
+

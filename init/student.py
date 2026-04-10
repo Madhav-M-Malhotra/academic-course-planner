@@ -16,6 +16,7 @@ if not pdf_path or not os.path.exists(pdf_path):
     print("FILE DOES NOT EXIST")
     exit()
 
+
 try:
     conn = mysql.connector.connect(
         host=DB_HOST,
@@ -29,6 +30,7 @@ except Exception as e:
     print("DB CONNECTION FAILED:", e)
     exit()
 
+
 text = ""
 
 with pdfplumber.open(pdf_path) as pdf:
@@ -39,14 +41,23 @@ with pdfplumber.open(pdf_path) as pdf:
 
 print("\nExtracted Preview:\n", text[:500])
 
+
 e = re.search(r"Enrolment No:\s*(\w+)", text)
 e_id = e.group(1) if e else None
+
 
 name_match = re.search(r"Name:\s*(.+)", text)
 s_name = name_match.group(1).strip() if name_match else None
 
-prog_match = re.search(r"Programme\s*&\s*Major:\s*(.+)", text)
-prog_major = prog_match.group(1).strip() if prog_match else ""
+prog_match = re.search(r"Programme\s*&\s*Major:\s*([\s\S]+?)Date Time:", text)
+
+if prog_match:
+    prog_major = prog_match.group(1).replace("\n", " ").strip()
+else:
+    prog_major = ""
+
+
+prog_major = re.sub(r"\s+", " ", prog_major)
 
 if "-" in prog_major:
     programme, major = prog_major.split("-", 1)
@@ -57,14 +68,17 @@ else:
 programme = programme.strip()
 major = major.strip()
 
+
 email_match = re.search(r"(Email|E-mail|Email ID):\s*([\w\.-]+@[\w\.-]+)", text)
-email = email_match.group(2) if email_match else None
+email = email_match.group(2) if email_match else "NA"
+
 
 minor_match = re.search(r"Minor:\s*(.+)", text)
 minor = minor_match.group(1).strip() if minor_match else None
 
 if minor:
     minor = re.sub(r"\(.*?\)", "", minor).strip()
+
 
 print("\nExtracted Values")
 print("Enrolment ID:", e_id)
@@ -74,11 +88,12 @@ print("Major:", major)
 print("Email:", email)
 print("Minor:", minor)
 
+
 if e_id and s_name and programme and major:
     try:
         cursor.execute("""
             INSERT INTO Student 
-            (e_id, s_name, email, programme, major, minor)
+            (id, name, email, program, major, minor)
             VALUES (%s, %s, %s, %s, %s, %s)
         """, (e_id, s_name, email, programme, major, minor))
 
@@ -89,6 +104,7 @@ if e_id and s_name and programme and major:
         print("\nDB Error:", err)
 else:
     print("\nSTUDENT EXTRACTION FAILED")
+
 
 cursor.close()
 conn.close()
