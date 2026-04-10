@@ -13,24 +13,30 @@ conn = mysql.connector.connect(
 )
 cursor = conn.cursor()
 
-# Read Excel file properly
-df = pd.read_excel(r"C:\Users\helis\Desktop\AU\SE\Courses_Planned.xlsx")
+df = pd.read_excel("Courses_Planned.xlsx")
 
 for _, row in df.iterrows():
 
-    student_id = str(row["ID"]).strip()
-    course_code = str(row["Course Code"]).strip()
-
     try:
+        student_id = str(row["ID"]).strip()
+        course_code = str(row["Course Code"]).strip()
+
+    
+        section_no = int(row["Section"]) if not pd.isna(row["Section"]) else None
+
+        if section_no is None:
+            continue
+
         cursor.execute("""
-            INSERT INTO Courses_Planned (student_id, course_code)
-            VALUES (%s, %s)
-        """, (student_id, course_code))
-    except:
-        pass
+            INSERT IGNORE INTO Courses_Planned 
+            (student_id, course_code, section_no)
+            VALUES (%s, %s, %s)
+        """, (student_id, course_code, section_no))
+
+    except Exception as e:
+        print("Row Error:", row, e)
 
 conn.commit()
 cursor.close()
 conn.close()
 
-print("✅ Courses_Planned table populated!")
