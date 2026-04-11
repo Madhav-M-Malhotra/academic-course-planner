@@ -63,8 +63,8 @@ enum Days{
 model Section{
   course_code String
   section_no Int
-  start_date DateTime
-  end_date DateTime
+  start_date DateTime @db.Date //Only Date datatype
+  end_date DateTime @db.Date   //Only Date datatype
   schedule Schedule[]
 
   @@id([course_code, section_no])
@@ -75,8 +75,8 @@ model Schedule{
   course_code String
   section_no Int
   day Days
-  start_time DateTime
-  end_time DateTime
+  start_time DateTime @db.Time() //Only Time datatype
+  end_time DateTime @db.Time()   //Only Time datatype
 
   @@id([course_code, section_no, day, start_time])
   section Section @relation(fields: [course_code, section_no], references: [course_code, section_no])
