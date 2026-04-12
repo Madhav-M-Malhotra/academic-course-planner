@@ -4,7 +4,7 @@ import mysql.connector
 import os
 from dotenv import load_dotenv
 
-load_dotenv()
+load_dotenv(dotenv_path="../backend/.env")
 
 DB_HOST = os.getenv("DB_HOST")
 DB_USER = os.getenv("DB_USER")

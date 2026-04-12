@@ -3,7 +3,7 @@ import os
 from dotenv import load_dotenv
 import pandas as pd
 
-load_dotenv()
+load_dotenv(dotenv_path="../backend/.env")
 
 conn = mysql.connector.connect(
     host=os.getenv("DB_HOST"),

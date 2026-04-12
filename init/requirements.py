@@ -1,9 +1,20 @@
+"""
+requirements.py — Loads graduation requirements from Requirements.txt.
+
+Expected tab-separated format (with header row):
+  Subject  CourseCode  For(MAJOR|MINOR)  Type(CORE|ELECTIVE)
+
+The Prisma schema defines:
+  enum ReqType   { MAJOR MINOR }
+  enum CourseType{ CORE ELECTIVE }
+"""
+
+import re
 import mysql.connector
 import os
 from dotenv import load_dotenv
-import re
 
-load_dotenv()
+load_dotenv(dotenv_path="../backend/.env")
 
 conn = mysql.connector.connect(
     host=os.getenv("DB_HOST"),
@@ -13,43 +24,61 @@ conn = mysql.connector.connect(
 )
 cursor = conn.cursor()
 
-with open("Requirements.txt", "r", encoding="utf-8") as f:
-    lines = f.readlines()
+VALID_FOR  = {"MAJOR", "MINOR"}
+VALID_TYPE = {"CORE", "ELECTIVE"}
 
+inserted = 0
+skipped  = 0
 
-lines = lines[1:]
+try:
+    with open("Requirements.txt", "r", encoding="utf-8") as f:
+        lines = f.readlines()
+except FileNotFoundError:
+    print("Requirements.txt not found — skipping.")
+    cursor.close()
+    conn.close()
+    exit()
 
+lines = lines[1:]  # skip header
 
 for line in lines:
     line = line.strip()
-    
     if not line:
         continue
 
-  
+    # Split on tabs or 2+ spaces
     parts = re.split(r"\t+|\s{2,}", line)
-
     if len(parts) < 4:
+        skipped += 1
         continue
 
-    subject = parts[0].strip()
-    course_code = parts[1].strip()
+    subject     = parts[0].strip()
+    course_code = re.sub(r'["\'\[\]]', '', parts[1]).strip()
+    for_val     = parts[2].strip().upper()
+    type_val    = parts[3].strip().upper()
 
+    # Validate against enums
+    if for_val not in VALID_FOR:
+        print(f"  Skipping invalid ReqType '{for_val}' for {course_code}")
+        skipped += 1
+        continue
 
-    course_code = re.sub(r'["\']', '', course_code).strip()
-
-    for_field = parts[2].strip().upper()   
-    type_field = parts[3].strip().upper()  
+    if type_val not in VALID_TYPE:
+        print(f"  Skipping invalid CourseType '{type_val}' for {course_code}")
+        skipped += 1
+        continue
 
     try:
         cursor.execute("""
-            INSERT INTO Requirements (subject, course_code, `for`, `type`)
+            INSERT IGNORE INTO Requirements (subject, course_code, `for`, `type`)
             VALUES (%s, %s, %s, %s)
-        """, (subject, course_code, for_field, type_field))
-    except:
-        pass  
+        """, (subject, course_code, for_val, type_val))
+        inserted += 1
+    except Exception as e:
+        print(f"  DB Error [{course_code}]: {e}")
+        skipped += 1
 
 conn.commit()
 cursor.close()
 conn.close()
-
+print(f"Finished. Inserted: {inserted}, Skipped: {skipped}")
