@@ -12,7 +12,6 @@ const authRouter = require("./routes/auth.routes.js");
 const mainRouter = require("./routes/main.routes.js");
 const courseRouter = require("./routes/course.routes.js");
 const planRouter = require("./routes/plan.routes.js");
-const timetableRouter = require("./routes/timetable.routes.js");
 
 app.use(express.json());//for reading json requests
 app.use(express.urlencoded({extended: true}));//to parse HTML Forms data
@@ -52,8 +51,5 @@ app.use('/courses', courseRouter);
 //Plan Routes
 app.use('/plan', planRouter);
 
-//Timetable Routes
-app.use('/timetable', timetableRouter);
-
 //Main page Routes
-app.get('/', mainRouter);
+app.use('/', mainRouter);
